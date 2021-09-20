@@ -39,19 +39,20 @@ deviceName = ""
 def getSoundFileList(location):
     fileArray = []
     for file in glob.glob(location + "*.sf2"):
-        if (os.path.exists(file)):
-            fileArray.append(file)
+        fileArray.append(file)
     return sorted(fileArray)
 
 def getInstrumentList(file):
+    stringArray = []
     cmd = COM_SF2 + "'" + file + "'"
     fsOutput = str(subprocess.run(cmd, capture_output=True, shell=True))
-    startList = fsOutput.find("stdout=b'") + len("stdout=b'")
-    endList = fsOutput.find("\\ncheers!")
-    substring = fsOutput[startList:endList]
-    stringArray = substring.split("\\n")
-    for i, string in enumerate(stringArray):
-        stringArray[i] = string[8:]
+    if (not "inst: invalid font number" in fsOutput):
+        startList = fsOutput.find("stdout=b'") + len("stdout=b'")
+        endList = fsOutput.find("\\ncheers!")
+        substring = fsOutput[startList:endList]
+        stringArray = substring.split("\\n")
+        for i, string in enumerate(stringArray):
+            stringArray[i] = string[8:]
     return stringArray
 
 def getBankName(soundfontsDir, file):
