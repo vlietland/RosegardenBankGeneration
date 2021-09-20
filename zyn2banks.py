@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #******************************************************************************
-# RosegardenBankGeneration: sf2banks.py
+# RosegardenBankGeneration: zyn2banks.py
 #
-# Main Program for FluidSynth bank generation
+# Main Program for ZynAddSubFX bank generation
 #
 # Copyright (C) 2021 Jan Vlietland <j.vlietland@ziggo.nl>
 #
@@ -29,35 +29,25 @@ import glob
 import xml.etree.ElementTree as ET
 import subprocess
 
-COM_SF2 = 'fluidsynth -i -f config.txt -a pulseaudio '
 roseGardenFile = ""
 soundfontsDir = ""
 msbValue = ""
 roseGardenFile = ""
 deviceName = ""
 
-def getSoundFileList(location):
-    fileArray = []
-    for file in glob.glob(location + "*.sf2"):
-        if (os.path.exists(file)):
-            fileArray.append(file)
-    return sorted(fileArray)
+def getBankList(banksDir):
+    return sorted(glob.glob(banksDir+"/*/"))
 
-def getInstrumentList(file):
-    cmd = COM_SF2 + "'" + file + "'"
-    fsOutput = str(subprocess.run(cmd, capture_output=True, shell=True))
-    startList = fsOutput.find("stdout=b'") + len("stdout=b'")
-    endList = fsOutput.find("\\ncheers!")
-    substring = fsOutput[startList:endList]
-    stringArray = substring.split("\\n")
-    for i, string in enumerate(stringArray):
-        stringArray[i] = string[8:]
+def getInstrumentList(bankDir):
+    stringArray = []
+    for file in sorted(glob.glob(bankDir+"*.xiz")):
+        string = file.replace(bankDir,"")
+        endString = string.find(".xiz")
+        stringArray.append(string[5:endString])
     return stringArray
 
-def getBankName(soundfontsDir, file):
-    string = file.replace(soundfontsDir,"")
-    endList = string.find(".sf2")
-    return string[:endList]
+def getBankName(banksDir, bankDir):
+    return bankDir.replace(banksDir,"")[:-1]
     
 def addBank(tree, bankName, instrumentList, msbValue, lsbValue):
     root = tree.getroot()
@@ -71,16 +61,16 @@ def addBank(tree, bankName, instrumentList, msbValue, lsbValue):
 
 try:
     if (len(sys.argv) == 2) and (sys.argv[1] == '--help') :
-        print("sf2banks runtime version 0.1 \n\
+        print("zyn2banks runtime version 0.1 \n\
 Copyright (C) 2021 Jan Vlietland. \n\
 Distributed under the LGPL license. \n \n\
 Usage: \n \
-  sf2banks [options | source file] [destination file] [soundfonts path] [msb value] [device name]\n \n\
+  zyn2banks [options | source file] [destination file] [soundfonts path] [msb value] \n \n\
 Possible options: \n\
   --help : Shows this help \n \n\
-Remark: Rosegarden file are gzipped. sf2banks cannot read these gzipped file. Therefore\
+Remark: Rosegarden file are gzipped. zyn2banks cannot read these gzipped file. Therefore\
 first gunzip the file with the 'gunzip -S .rg [rosegarden filename]'.\
-sf2banks is able to read the unencrypted file.\n")
+zyn2banks is able to read the unencrypted file.\n")
         exit()
     elif (len(sys.argv) == 6) :
         roseGardenFile = sys.argv[1]
@@ -103,16 +93,17 @@ tree = ET.parse(roseGardenFile)
 
 #---------------------------------------executing command-----------------------------
 
-print("reading: '"+soundfontsDir+"', the soundfont directory")
-fileList = getSoundFileList(soundfontsDir)
+print("\nreading: '"+soundfontsDir+"', the soundfont directory")
+directoryList = getBankList(soundfontsDir)
+
 print("generating banks")
-for i, string in enumerate(fileList):
-    bankName = getBankName(soundfontsDir, fileList[i])
-    print("reading SoundFonts file: "+fileList[i])
-    instrumentList = getInstrumentList(fileList[i])
+for i, string in enumerate(directoryList):
+    bankName = getBankName(soundfontsDir, directoryList[i])
+    instrumentList = getInstrumentList(directoryList[i])
     addBank(tree, bankName, instrumentList, msbValue, str(i))
 
-#print(ET.dump(tree))
-print("writing file to: '"+targetFile+"'")
+print(ET.dump(tree))
+print("\nwriting file to: '"+targetFile+"'")
 tree.write(targetFile)
-print("done !")
+print("\n done !")
+
