@@ -47,7 +47,7 @@ def getInstrumentList(file):
     cmd = COM_SF2 + "'" + file + "'"
     fsOutput = str(subprocess.run(cmd, capture_output=True, shell=True))
     if (not "inst: invalid font number" in fsOutput):
-        startList = fsOutput.find("stdout=b'") + len("stdout=b'")
+        startList = fsOutput.find("stdout=b") + len("stdout=b")+1
         endList = fsOutput.find("\\ncheers!")
         substring = fsOutput[startList:endList]
         stringArray = substring.split("\\n")
@@ -106,6 +106,7 @@ tree = ET.parse(roseGardenFile)
 
 print("reading: '"+soundfontsDir+"', the soundfont directory")
 fileList = getSoundFileList(soundfontsDir)
+
 print("generating banks")
 for i, string in enumerate(fileList):
     bankName = getBankName(soundfontsDir, fileList[i])

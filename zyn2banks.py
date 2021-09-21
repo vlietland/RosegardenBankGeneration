@@ -28,6 +28,7 @@ import os
 import glob
 import xml.etree.ElementTree as ET
 import subprocess
+from operator import itemgetter, attrgetter, methodcaller
 
 roseGardenFile = ""
 soundfontsDir = ""
@@ -36,7 +37,14 @@ roseGardenFile = ""
 deviceName = ""
 
 def getBankList(banksDir):
-    return sorted(glob.glob(banksDir+"/*/"))
+    bankArray = glob.glob(banksDir+"/*/")
+    for i, bank in enumerate(bankArray):
+        bankArray[i] = getBankName(banksDir, bankArray[i])+";"+bankArray[i]
+    return sorted(bankArray)
+
+def getBankName(banksDir, bankDir):
+    bankName = bankDir.replace(banksDir,"")[:-1]
+    return bankName
 
 def getInstrumentList(bankDir):
     stringArray = []
@@ -45,9 +53,6 @@ def getInstrumentList(bankDir):
         endString = string.find(".xiz")
         stringArray.append(string[5:endString])
     return stringArray
-
-def getBankName(banksDir, bankDir):
-    return bankDir.replace(banksDir,"")[:-1]
     
 def addBank(tree, bankName, instrumentList, msbValue, lsbValue):
     root = tree.getroot()
@@ -94,12 +99,15 @@ tree = ET.parse(roseGardenFile)
 #---------------------------------------executing command-----------------------------
 
 print("\nreading: '"+soundfontsDir+"', the soundfont directory")
-directoryList = getBankList(soundfontsDir)
+directoryList = getBankList(soundfontsDir+"zynbanks/")
+directoryList.append(getBankList(soundfontsDir+"presets/zynaddsubfx/")[0])
+directoryListSorted = sorted(directoryList)
 
 print("generating banks")
-for i, string in enumerate(directoryList):
-    bankName = getBankName(soundfontsDir, directoryList[i])
-    instrumentList = getInstrumentList(directoryList[i])
+for i, string in enumerate(directoryListSorted):
+    dirSplitArray = directoryListSorted[i].split(";")
+    bankName = dirSplitArray[0]
+    instrumentList = getInstrumentList(dirSplitArray[1])
     addBank(tree, bankName, instrumentList, msbValue, str(i))
 
 print(ET.dump(tree))
